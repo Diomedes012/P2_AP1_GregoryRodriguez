@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using P2_AP1_GregoryRodriguez.Components;
+using P2_AP1_GregoryRodriguez.DAL;
 
 namespace P2_AP1_GregoryRodriguez;
 
@@ -11,6 +13,10 @@ public class Program
         // Add services to the container.
         builder.Services.AddRazorComponents()
             .AddInteractiveServerComponents();
+
+        var ConnectionString = builder.Configuration.GetConnectionString("ConStr");
+
+        builder.Services.AddDbContextFactory<Contexto>(option => option.UseSqlite(ConnectionString));
 
         var app = builder.Build();
 
