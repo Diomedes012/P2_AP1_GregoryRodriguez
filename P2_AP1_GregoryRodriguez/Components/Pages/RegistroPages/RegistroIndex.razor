@@ -1,7 +1,7 @@
 ﻿@page "/Index"
 @using P2_AP1_GregoryRodriguez.Services
 @using P2_AP1_GregoryRodriguez.Models
-@inject RegistroService entradasGuacalesService
+@inject RegistroService registroService
 @rendermode InteractiveServer
 
 <PageTitle>Index</PageTitle>
@@ -98,7 +98,7 @@
 
 	public async Task Buscar()
 	{
-		var listaFiltrada = await entradasGuacalesService.Listar(e => e.Id > 0);
+		var listaFiltrada = await registroService.Listar(e => e.Id > 0);
 
 		if (!string.IsNullOrEmpty(Filtro))
 		{

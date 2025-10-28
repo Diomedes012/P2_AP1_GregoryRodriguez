@@ -1,0 +1,91 @@
+﻿@page "/Create/{Id:int}"
+@using P2_AP1_GregoryRodriguez.Services
+@using P2_AP1_GregoryRodriguez.Models
+@inject RegistroService registroService
+@inject NavigationManager navigationManager
+@rendermode InteractiveServer
+
+<PageTitle>Create</PageTitle>
+
+<EditForm Model="Registro1">
+	<DataAnnotationsValidator />
+	<div class="container">
+		<div class="card shadow-lg">
+			<div class="card-header text-center">
+				<h5 class="card-title">Crear Registro</h5>
+			</div>
+
+			<div class="card-body">
+				<div class="mt-3">
+					<label class="form-label">Fecha</label>
+					<InputDate class="form-control" @bind-Value="Registro1.Fecha"></InputDate>
+				</div>
+
+				<div class="mt-3">
+					<label class="form-label">EntradaId</label>
+					<InputNumber class="form-control" @bind-Value="Registro1.Id" readonly></InputNumber>
+				</div>
+
+
+				@*Detalle*@
+				<div class="border border-success p-3 mt-3">
+					<h5>Detalles Registro1</h5>
+					<div class="row">
+						<div class="col-4">
+							<label class="form-label">Tipo Detalle</label>
+							
+						</div>
+
+						<div class="col-3">
+							<label class="form-label">Cantidad Detalle</label>
+						</div>
+						<div class="col-2 align-self-end">
+							<button type="button" Class="btn btn-primary bi bi-plus-lg w-100">Agregar</button>
+						</div>
+					</div>
+
+					@if ()
+					{
+						<div class="mt-3">
+							<table class="table table-bordered table-striped">
+								<thead>
+									<tr>
+										<th>Tipo Detalle</th>
+										<th>Cantidad Detalle</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody>
+									@foreach ()
+									{
+										<tr>
+											
+										</tr>
+
+									}
+								</tbody>
+							</table>
+							<label class="float-end"><strong>Cantidad de Detalles: </strong></label>
+						</div>
+					}
+				</div>
+			</div>
+
+			<div class="card-footer text-center">
+				<a href="/Guacales/Index" class="btn btn-secondary bi bi-arrow-left">Volver</a>
+				<button type="submit" class="btn btn-primary bi bi-floppy">Crear</button>
+				@if(Id != 0)
+				{
+					<button type="submit" class="btn btn-danger bi bi-trash">Eliminar</button>
+				}
+			</div>
+		</div>
+
+	</div>
+</EditForm>
+@code {
+	[Parameter]
+	public int Id { get; set; }
+
+	public Registro Registro1 { get; set; } = new Registro{}; 
+}
