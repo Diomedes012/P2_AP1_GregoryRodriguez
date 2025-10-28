@@ -6,4 +6,6 @@ public class Registro
 {
     [Key]
     public int Id { get; set; }
+
+    public DateTime Fecha { get; set; }
 }

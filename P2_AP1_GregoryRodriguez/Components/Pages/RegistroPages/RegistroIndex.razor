@@ -1,0 +1,126 @@
+﻿@page "/Index"
+@using P2_AP1_GregoryRodriguez.Services
+@using P2_AP1_GregoryRodriguez.Models
+@inject RegistroService entradasGuacalesService
+@rendermode InteractiveServer
+
+<PageTitle>Index</PageTitle>
+
+<div class="container">
+	<div class="card shadow-lg">
+		@*Header*@
+		<div class="card-header">
+			<h5 class="card-title">Lista de Entradas de Guacales</h5>
+			<a href="/EntradasGuacales/Create" class="btn btn-primary bi bi-plus-square"> Crear</a>
+		</div>
+		@*Body*@
+		<div class="card-body">
+			<div class="row mt-3">
+				<div class="col-3">
+					<label class="col-form-label"><strong>Desde</strong></label>
+					<InputDate class="form-control" @bind-Value="Desde"></InputDate>
+				</div>
+
+				<div class="col-3">
+					<label class="col-form-label"><strong>Hasta</strong></label>
+					<InputDate class="form-control" @bind-Value="Hasta"></InputDate>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-3">
+					<label class="form-label"><strong>Filtrar Por: </strong></label>
+				</div>
+
+				<div class="col-4">
+					<label class="form-label"><strong>Busqueda</strong></label>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-3">
+					<InputSelect class="form-select" @bind-Value="Filtro">
+						<option value="" selected disabled>Elija una opcion</option>
+						<option value="Id">Id</option>
+					</InputSelect>
+				</div>
+
+				<div class="col-4">
+					<div class="input-group">
+						<input class="form-control" @bind-value="ValorFiltro" placeholder="Buscar" />
+						<button type="button" class="btn btn-primary bi bi-search" @onclick="Buscar"></button>
+					</div>
+				</div>
+				@*<div class="col-3">
+					<button type="button" class="btn btn-secondary bi bi-arrow-counterclockwise" @onclick="Restablecer"></button>
+				</div>
+			</div>*@
+
+				<table class="table table-hover mt-3">
+					<thead class="table table-striped text-black">
+						<tr>
+							<th>Id</th>
+							<th>Fecha</th>
+							<th>Opciones</th>
+						</tr>
+					</thead>
+					<tbody>
+						@foreach (var guacal in ListaRegistros)
+						{
+
+						}
+					</tbody>
+				</table>
+
+
+			</div>
+
+			@*Footer*@
+			<div class="card-footer d-flex justify-content-end">
+				<div class="d-flex flex-column text-end">
+					<label class="form-label"><strong>Cantidad de Registros: </strong></label>
+					<label class="form-label"><strong>Monto total: </strong></label>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+	
+
+
+@code {
+	public List<Registro> ListaRegistros { get; set; }
+	public string Filtro { get; set; } = string.Empty;
+	public string ValorFiltro { get; set; } = string.Empty;
+
+	public DateTime? Desde { get; set; }
+	public DateTime? Hasta { get; set; }
+
+	public async Task Buscar()
+	{
+		var listaFiltrada = await entradasGuacalesService.Listar(e => e.Id > 0);
+
+		if (!string.IsNullOrEmpty(Filtro))
+		{
+			if (Filtro == "Id" && int.TryParse(ValorFiltro, out int id))
+			{
+				listaFiltrada = listaFiltrada.Where(e => e.Id == id).ToList();
+			}
+			else if (Filtro == "Fecha")
+			{
+				if (Desde.HasValue)
+				{
+					listaFiltrada = listaFiltrada.Where(e => e.Fecha.Date >= Desde.Value.Date).ToList();
+				}
+				if (Hasta.HasValue)
+				{
+					DateTime fechaHasta = Hasta.Value.Date.AddDays(1).AddSeconds(-1);
+					listaFiltrada = listaFiltrada.Where(e => e.Fecha <= fechaHasta).ToList();
+				}
+			}
+		}
+
+		ListaRegistros = listaFiltrada;
+			
+	}
+}
