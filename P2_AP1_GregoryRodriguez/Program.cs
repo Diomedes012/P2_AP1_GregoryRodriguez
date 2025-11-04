@@ -18,7 +18,8 @@ public class Program
         var ConnectionString = builder.Configuration.GetConnectionString("ConStr");
 
         builder.Services.AddDbContextFactory<Contexto>(option => option.UseSqlite(ConnectionString));
-        builder.Services.AddScoped<RegistroService>();
+        builder.Services.AddScoped<PedidosService>();
+        builder.Services.AddScoped<ComponenteService>();
 
         var app = builder.Build();
 

@@ -1,80 +1,106 @@
-﻿@page "/Create/{Id:int}"
+﻿@page "/Pedido/Create"
+@page "/Pedido/Edit/{PedidoId:int}"
+
 @using P2_AP1_GregoryRodriguez.Services
 @using P2_AP1_GregoryRodriguez.Models
-@inject RegistroService registroService
+@inject PedidosService pedidosService
+@inject ComponenteService componenteService
+@inject IJSRuntime JSRuntime
 @inject NavigationManager navigationManager
 @rendermode InteractiveServer
 
 <PageTitle>Create</PageTitle>
 
-<EditForm Model="Registro1">
+<EditForm Model="Pedido" OnValidSubmit="Guardar">
 	<DataAnnotationsValidator />
 	<div class="container">
 		<div class="card shadow-lg">
 			<div class="card-header text-center">
-				<h5 class="card-title">Crear Registro</h5>
+				<h5 class="card-title">Crear Pedidos</h5>
 			</div>
 
 			<div class="card-body">
 				<div class="mt-3">
 					<label class="form-label">Fecha</label>
-					<InputDate class="form-control" @bind-Value="Registro1.Fecha"></InputDate>
+					<InputDate class="form-control" @bind-Value="Pedido.Fecha"></InputDate>
 				</div>
 
 				<div class="mt-3">
 					<label class="form-label">EntradaId</label>
-					<InputNumber class="form-control" @bind-Value="Registro1.Id" readonly></InputNumber>
+					<InputNumber class="form-control" @bind-Value="Pedido.PedidoId" readonly></InputNumber>
+				</div>
+
+				<div class="mt-3">
+					<label class="form-label">Nombre Cliente</label>
+					<InputText class="form-control" @bind-Value="Pedido.NombreCliente"></InputText>
+					<ValidationMessage For="@(() => Pedido.NombreCliente)" />
 				</div>
 
 
 				@*Detalle*@
 				<div class="border border-success p-3 mt-3">
-					<h5>Detalles Registro1</h5>
-					<div class="row">
-						<div class="col-4">
-							<label class="form-label">Tipo Detalle</label>
-							
+					<div class="row align-items-end mb-3">
+						<div class="col-md-5">
+							<label>componente</label>
+							<InputSelect @bind-Value="ComponenteSeleccionadoId" class="form-select">
+								<option value="0" selected>-- Seleccione un Componente --</option>
+								@foreach (var prod in componentesDisponibles)
+								{
+									<option value="@prod.ComponenteId">@prod.Descripcion (Stock: @prod.Existencia)</option>
+								}
+							</InputSelect>
 						</div>
-
-						<div class="col-3">
-							<label class="form-label">Cantidad Detalle</label>
+						<div class="col-md-3">
+							<label>Cantidad</label>
+							<InputNumber @bind-Value="cantidadComponentes" class="form-control" />
 						</div>
-						<div class="col-2 align-self-end">
-							<button type="button" Class="btn btn-primary bi bi-plus-lg w-100">Agregar</button>
+						<div class="col-md-4">
+							<button @onclick="AgregarProducto" type="button" class="btn btn-success">
+								<i class="bi bi-plus-square"></i>
+							</button>
 						</div>
 					</div>
 
-					@if ()
-					{
 						<div class="mt-3">
 							<table class="table table-bordered table-striped">
 								<thead>
 									<tr>
-										<th>Tipo Detalle</th>
-										<th>Cantidad Detalle</th>
-										<th></th>
+										<th>Componente Id</th>
+										<th>Descripcion</th>
+										<th>Precio</th>
+										<th>Cantidad</th>
+										<th>Importe</th>
 									</tr>
 								</thead>
 								<tbody>
-									@foreach ()
+									@foreach (var detalle in Pedido.Detalles)
 									{
 										<tr>
-											
+											<td>@detalle.ComponenteId</td>
+											<td>@(componentesDisponibles.FirstOrDefault(p => p.ComponenteId == detalle.ComponenteId)?.Descripcion)</td>
+											<td>@detalle.Cantidad</td>
+											<td>@detalle.Precio.ToString("C2")</td>
+											<td>@((detalle.Cantidad * detalle.Precio).ToString("C2"))</td>
+											<td>
+												<button @onclick="() => RemoverComponente(detalle)" type="button" class="btn btn-sm btn-danger">
+													<i class="bi bi-trash"></i>
+												</button>
+											</td>
 										</tr>
 
 									}
 								</tbody>
 							</table>
-							<label class="float-end"><strong>Cantidad de Detalles: </strong></label>
+							<label class="float-end"><strong>Conteo: </strong></label>
+							<label class="float-end"><strong>Total: </strong></label>
 						</div>
-					}
 				</div>
 			</div>
 
 			<div class="card-footer text-center">
-				<a href="/Guacales/Index" class="btn btn-secondary bi bi-arrow-left">Volver</a>
+				<a href="/Pedido/Index" class="btn btn-secondary bi bi-arrow-left">Volver</a>
 				<button type="submit" class="btn btn-primary bi bi-floppy">Crear</button>
-				@if(Id != 0)
+				@if(esEdicion)
 				{
 					<button type="submit" class="btn btn-danger bi bi-trash">Eliminar</button>
 				}
@@ -85,7 +111,124 @@
 </EditForm>
 @code {
 	[Parameter]
-	public int Id { get; set; }
+	public int PedidoId { get; set; }
 
-	public Registro Registro1 { get; set; } = new Registro{}; 
+	private Pedidos Pedido = new Pedidos();
+	private List<Componente> componentesDisponibles = new List<Componente>();
+
+	private string titulo = "Crear Pedido";
+	private bool esEdicion => PedidoId > 0;
+
+	private int ComponenteSeleccionadoId = 0;
+
+	private int seleccionId;
+	private int cantidadComponentes = 1;
+
+	protected override async Task OnParametersSetAsync()
+	{
+		componentesDisponibles = await componenteService.Listar(p => true);
+
+		if (esEdicion)
+		{
+			// Es Edición: Buscar el Pedido
+			titulo = "Editar Pedido";
+			var pedidoEncontrado = await pedidosService.Buscar(PedidoId);
+			if (pedidoEncontrado != null)
+			{
+				Pedido = pedidoEncontrado;
+			}
+		}
+		else
+		{
+			// Es Creación: Instanciar un Pedido nuevo
+			titulo = "Crear Pedido";
+			Pedido = new Pedidos();
+		}
+	}
+
+	private async Task AgregarProducto()
+	{
+		if (ComponenteSeleccionadoId == 0 || cantidadComponentes <= 0)
+		{
+			await JSRuntime.InvokeVoidAsync("alert", "Debe seleccionar un componente y una cantidad válida.");
+			return;
+		}
+
+		var componente = await componenteService.Buscar(ComponenteSeleccionadoId);
+		if (componente == null)
+		{
+			await JSRuntime.InvokeVoidAsync("alert", "componente no encontrado.");
+			return;
+		}
+
+		// Validación de Stock
+		if (componente.Existencia < cantidadComponentes)
+		{
+			await JSRuntime.InvokeVoidAsync("alert", $"No hay suficiente stock para {componente.Descripcion}. Stock actual: {componente.Existencia}");
+			return;
+		}
+
+		// Crear el detalle
+		var nuevoDetalle = new PedidosDetalle
+		{
+			ComponenteId = componente.ComponenteId,
+			Cantidad = cantidadComponentes,
+			Precio = componente.Precio
+		};
+
+		Pedido.Detalles.Add(nuevoDetalle);
+		CalcularTotal();
+
+		// Limpiar inputs
+		ComponenteSeleccionadoId = 0;
+		cantidadComponentes = 1;
+	}
+
+	private void RemoverComponente(PedidosDetalle detalle)
+	{
+		Pedido.Detalles.Remove(detalle);
+		CalcularTotal();
+	}
+
+	private void CalcularTotal()
+	{
+		Pedido.Precio = Pedido.Detalles.Sum(d => d.Cantidad * d.Precio);
+	}
+
+	private async Task Guardar()
+	{
+		if (Pedido.Detalles.Count == 0)
+		{
+			await JSRuntime.InvokeVoidAsync("alert", "No puede guardar un Pedido sin componentes.");
+			return;
+		}
+
+		var guardado = await pedidosService.Guardar(Pedido);
+		if (guardado)
+		{
+			navigationManager.NavigateTo("/Pedido/Index");
+		}
+		else
+		{
+			await JSRuntime.InvokeVoidAsync("alert", "No se pudo guardar el Pedido (verifique el stock).");
+		}
+	}
+
+	private async Task Eliminar()
+	{
+		bool confirmado = await JSRuntime.InvokeAsync<bool>("confirm", "¿Está seguro que desea eliminar este Pedido? Esta acción devolverá los productos al inventario.");
+
+		if (confirmado && esEdicion)
+		{
+			var eliminado = await pedidosService.Eliminar(Pedido.PedidoId);
+			if (eliminado)
+			{
+				navigationManager.NavigateTo("/Pedido/Index");
+			}
+			else
+			{
+				await JSRuntime.InvokeVoidAsync("alert", "No se pudo eliminar el Pedido.");
+			}
+		}
+	}
 }
