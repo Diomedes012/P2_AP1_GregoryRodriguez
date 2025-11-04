@@ -15,9 +15,8 @@ public class PedidosService(IDbContextFactory<Contexto> factory)
 
     public async Task<bool> Guardar(Pedidos Pedido)
     {
-        //Crear Un contexto para TODA la operacion
         await using var contexto = await factory.CreateDbContextAsync();
-        //Iniciar una Transaccion
+
          await using var transaccion = await contexto.Database.BeginTransactionAsync();
 
         try
@@ -32,6 +31,7 @@ public class PedidosService(IDbContextFactory<Contexto> factory)
                 return false;
             }
 
+            transaccion.CommitAsync();
             return true;
         }
         catch(Exception)
@@ -45,7 +45,7 @@ public class PedidosService(IDbContextFactory<Contexto> factory)
     {
         var (afectado, error) = await AfectarExistencia(Pedido.Detalles.ToArray(), TipoOperacion.Resta, contexto);
 
-        if(afectado)
+        if(!afectado)
         {
             return (false, error);
         }
