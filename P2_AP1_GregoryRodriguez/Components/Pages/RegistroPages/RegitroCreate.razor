@@ -78,8 +78,9 @@
 										<tr>
 											<td>@detalle.ComponenteId</td>
 											<td>@(componentesDisponibles.FirstOrDefault(p => p.ComponenteId == detalle.ComponenteId)?.Descripcion)</td>
-											<td>@detalle.Cantidad</td>
 											<td>@detalle.Precio.ToString("C2")</td>
+											<td>@detalle.Cantidad</td>
+											
 											<td>@((detalle.Cantidad * detalle.Precio).ToString("C2"))</td>
 											<td>
 												<button @onclick="() => RemoverComponente(detalle)" type="button" class="btn btn-sm btn-danger">
